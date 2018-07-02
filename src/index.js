@@ -185,8 +185,8 @@ const defaultSignProvider = (eos, config) => async function({sign, buf, transact
   // offline signing assumes all keys provided need to sign
   if(config.httpEndpoint == null) {
     const sigs = []
-    for(const key of keys) {
-      sigs.push(sign(buf, key.private))
+    for(let i = 0; i < keys.length; i++) {
+      sigs.push(sign(buf, keys[i].private))
     }
     return sigs
   }
@@ -194,7 +194,8 @@ const defaultSignProvider = (eos, config) => async function({sign, buf, transact
   const keyMap = new Map()
 
   // keys are either public or private keys
-  for(const key of keys) {
+  for(let i = 0; i < keys.length; i++) {
+    const key = keys[i]
     const isPrivate = key.private != null
     const isPublic = key.public != null
 
@@ -214,7 +215,7 @@ const defaultSignProvider = (eos, config) => async function({sign, buf, transact
 
     const pvts = [], missingKeys = []
 
-    for(let requiredKey of required_keys) {
+    required_keys.forEach(requiredKey => {
       // normalize (EOSKey.. => PUB_K1_Key..)
       requiredKey = ecc.PublicKey(requiredKey).toString()
 
@@ -224,7 +225,7 @@ const defaultSignProvider = (eos, config) => async function({sign, buf, transact
       } else {
         missingKeys.push(requiredKey)
       }
-    }
+    })
 
     if(missingKeys.length !== 0) {
       assert(typeof keyProvider === 'function',
@@ -236,8 +237,8 @@ const defaultSignProvider = (eos, config) => async function({sign, buf, transact
     }
 
     const sigs = []
-    for(const pvt of pvts) {
-      sigs.push(sign(buf, pvt))
+    for(let i = 0; i < pvts.length; i++) {
+      sigs.push(sign(buf, pvts[i]))
     }
 
     return sigs

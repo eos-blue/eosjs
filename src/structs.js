@@ -24,8 +24,9 @@ module.exports = (config = {}, extendedSchema) => {
       return struct
     }
     // TODO: move up (before `const struct = abi.structs[lookupName]`)
-    for(const action of abi.abi.actions) {
-      const {name, type} = action
+    const {actions} = abi.abi
+    for(let i = 0; i < actions.length; i++) {
+      const {name, type} = actions[i]
       if(name === lookupName) {
         const struct = abi.structs[type]
         if(struct != null) {
@@ -196,7 +197,8 @@ const Symbol = validation => {
       const bin = bcopy.toBinary()
 
       let symbol = ''
-      for(const code of bin)  {
+      for(let i = 0; i < bin.length; i++) {
+        const code = bin[i]
         if(code == '\0') {
           break
         }

@@ -87,10 +87,8 @@ function WriteApi(Network, network, config, Transaction) {
       args = args.slice(1)
     } else if(typeof args[0] === 'object' && Array.isArray(args[0].actions)) {
       // full transaction, lookup ABIs used by each action
-      const accounts = new Set() // make a unique list
-      for(const action of args[0].actions) {
-        accounts.add(action.account)
-      }
+      const accounts = new Set(
+        args[0].actions.map(action => action.account))
 
       const abiPromises = []
       // Eos contract operations are cached (efficient and offline transactions)
@@ -118,11 +116,9 @@ function WriteApi(Network, network, config, Transaction) {
       assert(!callback, 'callback with contracts are not supported')
       assert.equal('function', typeof arg, 'provide function callback following contracts array parameter')
 
-      const contractPromises = []
-      for(const account of contracts) {
-        // setup wrapper functions to collect contract api calls
-        contractPromises.push(genContractActions(account, merge.transaction))
-      }
+      // setup wrapper functions to collect contract api calls
+      const contractPromises = contracts.map(account =>
+        genContractActions(account, merge.transaction))
 
       return Promise.all(contractPromises).then(actions => {
         const merges = {}
@@ -316,10 +312,10 @@ function WriteApi(Network, network, config, Transaction) {
     return Promise.resolve(promiseCollector).then(() =>
       Promise.all(messageList).then(resolvedMessageList => {
         const actions = []
-        for(let m of resolvedMessageList) {
+        resolvedMessageList.forEach(m => {
           const {actions: [action]} = m
           actions.push(action)
-        }
+        })
         const trObject = {}
         trObject.actions = actions
         return transaction(trObject, options)

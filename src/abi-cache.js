@@ -80,9 +80,9 @@ function abiToFcSchema(abi) {
   if(abi.structs) {
     abi.structs.forEach(e => {
       const fields = {}
-      for(const field of e.fields) {
+      e.fields.forEach(field => {
         fields[field.name] = field.type
-      }
+      })
       abiSchema[e.name] = {base: e.base, fields}
       if(e.base === '') {
         delete abiSchema[e.name].base

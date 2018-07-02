@@ -98,8 +98,8 @@ function encodeName(name, littleEndian = true) {
   // convert to LITTLE_ENDIAN
   let leHex = ''
   const bytes = littleEndian ? value.toBytesLE() : value.toBytesBE()
-  for(const b of bytes) {
-    const n = Number(b).toString(16)
+  for(let i = 0; i < bytes.length; i++) {
+    const n = Number(bytes[i]).toString(16)
     leHex += (n.length === 1 ? '0' : '') + n
   }
 
@@ -120,8 +120,8 @@ function decodeName(value, littleEndian = true) {
   // convert from LITTLE_ENDIAN
   let beHex = ''
   const bytes = littleEndian ? value.toBytesLE() : value.toBytesBE()
-  for(const b of bytes) {
-    const n = Number(b).toString(16)
+  for(let i = 0; i < bytes.length; i++) {
+    const n = Number(bytes[i]).toString(16)
     beHex += (n.length === 1 ? '0' : '') + n
   }
   beHex += '0'.repeat(16 - beHex.length)
