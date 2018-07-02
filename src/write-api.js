@@ -1,5 +1,6 @@
 const assert = require('assert')
 const ecc = require('eosjs-ecc')
+const {Buffer} = require('buffer')
 const Fcbuffer = require('fcbuffer')
 const createHash = require('create-hash')
 const {processArgs} = require('eosjs-api')

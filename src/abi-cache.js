@@ -1,4 +1,5 @@
 const assert = require('assert')
+const {Buffer} = require('buffer')
 const Structs = require('./structs')
 
 module.exports = AbiCache

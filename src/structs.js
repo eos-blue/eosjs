@@ -1,4 +1,5 @@
 const {Signature, PublicKey} = require('eosjs-ecc')
+const {Buffer} = require('buffer')
 const Fcbuffer = require('fcbuffer')
 const ByteBuffer = require('bytebuffer')
 const assert = require('assert')
