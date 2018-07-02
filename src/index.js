@@ -141,7 +141,7 @@ function throwOnDuplicate(o1, o2, msg) {
   If only one key is available, the blockchain API calls are skipped and that
   key is used to sign the transaction.
 */
-const defaultSignProvider = (eos, config) => async function({sign, buf, transaction}) {
+const defaultSignProvider = (eos, config) => function({sign, buf, transaction}) {
   const {keyProvider} = config
 
   if(!keyProvider) {
@@ -154,93 +154,93 @@ const defaultSignProvider = (eos, config) => async function({sign, buf, transact
   }
 
   // keyProvider may return keys or Promise<keys>
-  keys = await Promise.resolve(keys)
-
-  if(!Array.isArray(keys)) {
-    keys = [keys]
-  }
-
-  keys = keys.map(key => {
-    try {
-      // normalize format (WIF => PVT_K1_base58privateKey)
-      return {private: ecc.PrivateKey(key).toString()}
-    } catch(e) {
-      // normalize format (EOSKey => PUB_K1_base58publicKey)
-      return {public: ecc.PublicKey(key).toString()}
-    }
-    assert(false, 'expecting public or private keys from keyProvider')
-  })
-
-  if(!keys.length) {
-    throw new Error('missing key, check your keyProvider')
-  }
-
-  // simplify default signing #17
-  if(keys.length === 1 && keys[0].private) {
-    const pvt = keys[0].private
-    return sign(buf, pvt)
-  }
-
-  // offline signing assumes all keys provided need to sign
-  if(config.httpEndpoint == null) {
-    const sigs = []
-    for(let i = 0; i < keys.length; i++) {
-      sigs.push(sign(buf, keys[i].private))
-    }
-    return sigs
-  }
-
-  const keyMap = new Map()
-
-  // keys are either public or private keys
-  for(let i = 0; i < keys.length; i++) {
-    const key = keys[i]
-    const isPrivate = key.private != null
-    const isPublic = key.public != null
-
-    if(isPrivate) {
-      keyMap.set(ecc.privateToPublic(key.private), key.private)
-    } else {
-      keyMap.set(key.public, null)
-    }
-  }
-
-  const pubkeys = Array.from(keyMap.keys())
-
-  return eos.getRequiredKeys(transaction, pubkeys).then(({required_keys}) => {
-    if(!required_keys.length) {
-      throw new Error('missing required keys for ' + JSON.stringify(transaction))
+  return Promise.resolve(keys).then(keys => {
+    if(!Array.isArray(keys)) {
+      keys = [keys]
     }
 
-    const pvts = [], missingKeys = []
-
-    required_keys.forEach(requiredKey => {
-      // normalize (EOSKey.. => PUB_K1_Key..)
-      requiredKey = ecc.PublicKey(requiredKey).toString()
-
-      const wif = keyMap.get(requiredKey)
-      if(wif) {
-        pvts.push(wif)
-      } else {
-        missingKeys.push(requiredKey)
+    keys = keys.map(key => {
+      try {
+        // normalize format (WIF => PVT_K1_base58privateKey)
+        return {private: ecc.PrivateKey(key).toString()}
+      } catch(e) {
+        // normalize format (EOSKey => PUB_K1_base58publicKey)
+        return {public: ecc.PublicKey(key).toString()}
       }
+      assert(false, 'expecting public or private keys from keyProvider')
     })
 
-    if(missingKeys.length !== 0) {
-      assert(typeof keyProvider === 'function',
-        'keyProvider function is needed for private key lookup')
-
-      // const pubkeys = missingKeys.map(key => ecc.PublicKey(key).toStringLegacy())
-      keyProvider({pubkeys: missingKeys})
-        .forEach(pvt => { pvts.push(pvt) })
+    if(!keys.length) {
+      throw new Error('missing key, check your keyProvider')
     }
 
-    const sigs = []
-    for(let i = 0; i < pvts.length; i++) {
-      sigs.push(sign(buf, pvts[i]))
+    // simplify default signing #17
+    if(keys.length === 1 && keys[0].private) {
+      const pvt = keys[0].private
+      return sign(buf, pvt)
     }
 
-    return sigs
+    // offline signing assumes all keys provided need to sign
+    if(config.httpEndpoint == null) {
+      const sigs = []
+      for(let i = 0; i < keys.length; i++) {
+        sigs.push(sign(buf, keys[i].private))
+      }
+      return sigs
+    }
+
+    const keyMap = new Map()
+
+    // keys are either public or private keys
+    for(let i = 0; i < keys.length; i++) {
+      const key = keys[i]
+      const isPrivate = key.private != null
+      const isPublic = key.public != null
+
+      if(isPrivate) {
+        keyMap.set(ecc.privateToPublic(key.private), key.private)
+      } else {
+        keyMap.set(key.public, null)
+      }
+    }
+
+    const pubkeys = Array.from(keyMap.keys())
+
+    return eos.getRequiredKeys(transaction, pubkeys).then(({required_keys}) => {
+      if(!required_keys.length) {
+        throw new Error('missing required keys for ' + JSON.stringify(transaction))
+      }
+
+      const pvts = [], missingKeys = []
+
+      required_keys.forEach(requiredKey => {
+        // normalize (EOSKey.. => PUB_K1_Key..)
+        requiredKey = ecc.PublicKey(requiredKey).toString()
+
+        const wif = keyMap.get(requiredKey)
+        if(wif) {
+          pvts.push(wif)
+        } else {
+          missingKeys.push(requiredKey)
+        }
+      })
+
+      if(missingKeys.length !== 0) {
+        assert(typeof keyProvider === 'function',
+          'keyProvider function is needed for private key lookup')
+
+        // const pubkeys = missingKeys.map(key => ecc.PublicKey(key).toStringLegacy())
+        keyProvider({pubkeys: missingKeys})
+          .forEach(pvt => { pvts.push(pvt) })
+      }
+
+      const sigs = []
+      for(let i = 0; i < pvts.length; i++) {
+        sigs.push(sign(buf, pvts[i]))
+      }
+
+      return sigs
+    })
   })
 }
 

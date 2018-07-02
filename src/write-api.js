@@ -70,13 +70,15 @@ function WriteApi(Network, network, config, Transaction) {
     @arg {object} [args.options]
     @arg {function} [args.callback]
   */
-  const genTransaction = (structs, merge) => async function(...args) {
+  const genTransaction = (structs, merge) => function(...args) {
     let contracts, options, callback
 
     if(args[args.length - 1] == null) {
       // callback may be undefined
       args = args.slice(0, args.length - 1)
     }
+
+    let promise
 
     const isContractArray = isStringArray(args[0])
     if(isContractArray) {
@@ -98,46 +100,48 @@ function WriteApi(Network, network, config, Transaction) {
           abiPromises.push(config.abiCache.abiAsync(account))
         }
       })
-      await Promise.all(abiPromises)
+      promise = Promise.all(abiPromises)
     }
 
-    if(args.length > 1 && typeof args[args.length - 1] === 'function') {
-      callback = args.pop()
-    }
+    return (promise || Promise.resolve()).then(() => {
+      if(args.length > 1 && typeof args[args.length - 1] === 'function') {
+        callback = args.pop()
+      }
 
-    if(args.length > 1 && typeof args[args.length - 1] === 'object') {
-      options = args.pop()
-    }
+      if(args.length > 1 && typeof args[args.length - 1] === 'object') {
+        options = args.pop()
+      }
 
-    assert.equal(args.length, 1, 'transaction args: contracts<string|array>, transaction<callback|object>, [options], [callback]')
-    const arg = args[0]
+      assert.equal(args.length, 1, 'transaction args: contracts<string|array>, transaction<callback|object>, [options], [callback]')
+      const arg = args[0]
 
-    if(contracts) {
-      assert(!callback, 'callback with contracts are not supported')
-      assert.equal('function', typeof arg, 'provide function callback following contracts array parameter')
+      if(contracts) {
+        assert(!callback, 'callback with contracts are not supported')
+        assert.equal('function', typeof arg, 'provide function callback following contracts array parameter')
 
-      // setup wrapper functions to collect contract api calls
-      const contractPromises = contracts.map(account =>
-        genContractActions(account, merge.transaction))
+        // setup wrapper functions to collect contract api calls
+        const contractPromises = contracts.map(account =>
+          genContractActions(account, merge.transaction))
 
-      return Promise.all(contractPromises).then(actions => {
-        const merges = {}
-        actions.forEach((m, i) => {merges[contracts[i]] = m})
-        const param = isContractArray ? merges : merges[contracts[0]]
-        // collect and invoke api calls
-        return trMessageCollector(arg, options, param)
-      })
-    }
+        return Promise.all(contractPromises).then(actions => {
+          const merges = {}
+          actions.forEach((m, i) => {merges[contracts[i]] = m})
+          const param = isContractArray ? merges : merges[contracts[0]]
+          // collect and invoke api calls
+          return trMessageCollector(arg, options, param)
+        })
+      }
 
-    if(typeof arg === 'function') {
-      return trMessageCollector(arg, options, merge)
-    }
+      if(typeof arg === 'function') {
+        return trMessageCollector(arg, options, merge)
+      }
 
-    if(typeof arg === 'object') {
-      return transaction(arg, options, callback)
-    }
+      if(typeof arg === 'object') {
+        return transaction(arg, options, callback)
+      }
 
-    throw new Error('first transaction argument unrecognized', arg)
+      throw new Error('first transaction argument unrecognized', arg)
+    })
   }
 
   function genContractActions(account, transaction = null) {
@@ -411,7 +415,7 @@ function WriteApi(Network, network, config, Transaction) {
       assert(network, 'Network is required, provide httpEndpoint or own transaction headers')
       headers = network.createTransaction
     }
-    headers(options.expireInSeconds, checkError(callback, config.logger, async function(rawTx) {
+    headers(options.expireInSeconds, checkError(callback, config.logger, function(rawTx) {
       // console.log('rawTx', rawTx)
       assert.equal(typeof rawTx, 'object', 'expecting transaction header object')
       assert.equal(typeof rawTx.expiration, 'string', 'expecting expiration: iso date time string')
