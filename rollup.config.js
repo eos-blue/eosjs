@@ -16,6 +16,9 @@ module.exports = {
     require('rollup-plugin-strip')({
       functions: ['console.*', 'assert', 'assert.*']
     }),
+    require('rollup-plugin-replace')({
+      EOSJS_VERSION: JSON.stringify(pkg.version)
+    }),
     require('rollup-plugin-json')(),
     require('rollup-plugin-buble')(),
   ]
