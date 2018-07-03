@@ -10,6 +10,7 @@ module.exports = {
   plugins: [
     require('rollup-plugin-ignore')([
       'assert',
+      'isomorphic-fetch',
     ]),
     require('rollup-plugin-node-resolve')(),
     require('rollup-plugin-commonjs')(),
