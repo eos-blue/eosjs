@@ -5,7 +5,7 @@ module.exports = {
   external: Object.keys(pkg.dependencies),
   output: {
     file: pkg.main,
-    format: 'cjs'
+    format: 'iife',
   },
   plugins: [
     require('rollup-plugin-ignore')([
