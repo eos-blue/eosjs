@@ -18,6 +18,8 @@ module.exports = {
       preferBuiltins: false,
     }),
     require('rollup-plugin-commonjs')(),
+    require('rollup-plugin-node-globals')(),
+    require('rollup-plugin-node-builtins')(),
     require('rollup-plugin-strip')({
       functions: ['console.*', 'assert', 'assert.*']
     }),
