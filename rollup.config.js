@@ -12,7 +12,9 @@ module.exports = {
       'assert',
       'isomorphic-fetch',
     ]),
-    require('rollup-plugin-node-resolve')(),
+    require('rollup-plugin-node-resolve')({
+      preferBuiltins: false,
+    }),
     require('rollup-plugin-commonjs')(),
     require('rollup-plugin-strip')({
       functions: ['console.*', 'assert', 'assert.*']
