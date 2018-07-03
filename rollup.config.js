@@ -4,6 +4,7 @@ module.exports = {
   input: 'src/index.js',
   external: Object.keys(pkg.dependencies),
   output: {
+    name: 'eosjs',
     file: pkg.main,
     format: 'iife',
   },
