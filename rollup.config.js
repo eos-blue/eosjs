@@ -14,6 +14,7 @@ module.exports = {
       'isomorphic-fetch',
     ]),
     require('rollup-plugin-node-resolve')({
+      browser: true,
       preferBuiltins: false,
     }),
     require('rollup-plugin-commonjs')(),
